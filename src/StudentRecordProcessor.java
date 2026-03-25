@@ -1,4 +1,12 @@
-
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 public class StudentRecordProcessor {
     // Поля для хранения данных
     private final List<Student> students = new ArrayList<>();
@@ -12,8 +20,31 @@ public class StudentRecordProcessor {
     /**
      * Task 1 + Task 2 + Task 5 + Task 6
      */
-    public void readFile() {
-        // TODO: реализуйте чтение файла здесь
+    public void readFile() throws IOException, FileNotFoundException, NumberFormatException, InvalidScoreException {
+        try (BufferedReader reader = new BufferedReader(new FileReader("input/students.txt"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("###")) {
+                    continue;
+                }
+
+                String[] parts = line.split(",");
+                if (parts.length == 2) {
+                    String name = parts[0].trim();
+                    try {
+                        int score = Integer.parseInt(parts[1].trim());
+                        Student student = new Student(name, score);
+                        students.add(student);
+                    } catch (NumberFormatException e) {
+                        continue;
+                    }
+                }
+                System.out.println(line);
+            }
+        } catch (IOException e) {
+            System.out.println("something goes wrong");
+        } 
     }
 
     /**
@@ -21,13 +52,47 @@ public class StudentRecordProcessor {
      */
     public void processData() {
         // TODO: обработка данных и сортировка здесь
+
+        int points = 0;
+
+        for (Student s: students){
+            points += s.getScore();
+        }
+
+        averageScore = points/students.size();
+
+        Comparator<Student> byScore = new Comparator<Student>(){
+            public int compare(Student a, Student b){
+                return Integer.compare(b.getScore(), a.getScore());
+            }
+        };
+        students.sort(byScore);
+        for (Student s: students){
+            System.out.println(s.getName());
+        }
+
+        highestStudent = students.getFirst();
+        System.out.println("average: " + averageScore);
+        System.out.println("highest score: " + highestStudent.getScore());
     }
 
     /**
      * Task 4 + Task 5 + Task 8
      */
-    public void writeFile() {
+    public void writeFile() throws IOException{
         // TODO: запись результата в файл здесь
+        try( BufferedWriter bw = new BufferedWriter(new FileWriter("output/report.txt"))){
+            bw.write("Average: " + averageScore);
+            bw.newLine();
+            bw.write("Highest: " + highestStudent.getName() + " " + highestStudent.getScore());
+            bw.newLine();
+            for (Student s: students) {
+                bw.write(s.getName() + " " + s.getScore());
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            System.out.println("error");
+        }
     }
 
     public static void main(String[] args) {
@@ -44,5 +109,29 @@ public class StudentRecordProcessor {
     }
 }
 
-// class InvalidScoreException реализуйте меня
-// class Student (name, score)
+class InvalidScoreException extends Exception {
+    public InvalidScoreException(String message) {
+        super(message);
+    }
+}
+
+class Student{
+    private String name;
+    private int score;
+    
+    public Student(String name, int score) throws InvalidScoreException{
+        if (score < 0 || score > 100) {
+            throw new InvalidScoreException("invalid score");
+        }
+        this.name = name;
+        this.score = score;
+    }
+    
+    public String getName() {
+        return this.name;
+    }
+    
+    public int getScore() {
+        return this.score;
+    }
+}
